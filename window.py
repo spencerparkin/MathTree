@@ -17,11 +17,16 @@ class GLCanvas(QtOpenGL.QGLWidget):
         super().__init__(gl_format, parent)
         
         self.root_node = None
+        
+        self.animation_timer = QtCore.QTimer()
+        self.animation_timer.start(1)
+        self.animation_timer.timeout.connect(self.animation_tick)
     
     def set_root_node(self, node):
         self.root_node = node
         if isinstance(node, MathTreeNode):
-            node.calculate_target_position()
+            node.calculate_target_positions()
+            node.assign_initial_positions()
     
     def get_root_node(self):
         return self.root_node
@@ -68,7 +73,7 @@ class GLCanvas(QtOpenGL.QGLWidget):
         glFlush()
     
     def _render_node(self, node):
-        rect = node.calculate_bounding_rectangle(targets=True)
+        rect = node.calculate_bounding_rectangle(targets=False)
         glBegin(GL_QUADS)
         try:
             glColor3f(0.8, 0.8, 0.8)
@@ -85,9 +90,14 @@ class GLCanvas(QtOpenGL.QGLWidget):
     
     def _render_edges(self, node):
         for child in node.child_list:
-            glVertex2f(node.target_position.x, node.target_position.y)
-            glVertex2f(child.target_position.x, child.target_position.y)
+            glVertex2f(node.position.x, node.position.y)
+            glVertex2f(child.position.x, child.position.y)
             self._render_edges(child)
+
+    def animation_tick(self):
+        if isinstance(self.root_node, MathTreeNode):
+            self.root_node.advance_positions(0.05)
+            self.update()
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):

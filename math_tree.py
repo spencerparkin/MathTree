@@ -7,17 +7,19 @@ from math2d_aa_rect import AxisAlignedRectangle
 from math2d_line_segment import LineSegment
 
 class MathTreeNode(object):
+    # Note that no node instance should appear more than once in the tree.
+    
     def __init__(self, data, child_list=None):
         self.position = None
         self.target_position = None
         self.child_list = [] if child_list is None else child_list
         self.data = data
     
-    def calculate_target_position(self):
+    def calculate_target_positions(self):
         self.target_position = Vector(0.0, 0.0)
         
         for node in self.child_list:
-            node.calculate_target_position()
+            node.calculate_target_positions()
         
         rect_list = [node.calculate_subtree_bounding_rectangle(targets=True) for node in self.child_list]
         padding = 0.5
