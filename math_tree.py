@@ -20,7 +20,8 @@ class MathTreeNode(object):
             node.calculate_target_position()
         
         rect_list = [node.calculate_subtree_bounding_rectangle(targets=True) for node in self.child_list]
-        total_width = sum([rect.Width() for rect in rect_list])
+        padding = 0.5
+        total_width = sum([rect.Width() for rect in rect_list]) + float(len(rect_list) - 1) * padding
         
         position = Vector(-total_width / 2.0, -2.0)
         for i, node in enumerate(self.child_list):
@@ -28,6 +29,7 @@ class MathTreeNode(object):
             position += Vector(rect.Width() / 2.0, 0.0)
             node.translate_target_positions(position)
             position += Vector(rect.Width() / 2.0, 0.0)
+            position += Vector(padding, 0.0)
     
     def calculate_subtree_bounding_rectangle(self, targets=True):
         rect = self.calculate_bounding_rectangle(targets)
