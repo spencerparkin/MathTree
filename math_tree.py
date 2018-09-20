@@ -133,14 +133,17 @@ class MathTreeNode(object):
                         raise Exception('The inner product is not generally associative!')
             grade = math.abs(grade_a - grade_b)
             return grade
-        elif self.data == '+':
+        elif self.data == '+' or self.data == '^':
             if len(self.child_list) == 0:
                 return 0
             grade_list = [child.grade for child in self.child_list]
             if any([grade == None for grade in grade_list]):
                 return None
-            if all([grade_list[0] == grade for grade in grade_list[1:]]) or len(grade_list) == 1:
-                return grade_list[0]
+            if self.data == '+':
+                if all([grade_list[0] == grade for grade in grade_list[1:]]) or len(grade_list) == 1:
+                    return grade_list[0]
+            elif self.data == '^':
+                return sum(grade_list)
         return None # We don't know the grade, or there may not be one homogeneous grade.
 
     def copy(self):
