@@ -84,10 +84,32 @@ class GLCanvas(QtOpenGL.QGLWidget):
         finally:
             glEnd()
 
-        # glColor3f(0.0, 0.0, 0.0)
-        # glRasterPos2f(0.0, 0.0)
-        # glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord('A'))
-    
+        glColor3f(0.0, 0.0, 0.0)
+        self._render_text(GLUT_STROKE_ROMAN, node.display_text(), rect)
+
+    def _render_text(self, font, text, rect):
+        total_width = 0.0
+        for char in text:
+            width = glutStrokeWidth(font, ord(char))
+            total_width += float(width)
+        text_rect = AxisAlignedRectangle()
+        text_rect.min_point.x = 0.0
+        text_rect.max_point.x = total_width
+        text_rect.min_point.y = 0.0
+        text_rect.max_point.y = 119.05
+        original_height = text_rect.Height()
+        text_rect.ExpandToMatchAspectRatioOf(rect)
+        height = text_rect.Height()
+        scale = rect.Width() / text_rect.Width()
+        glPushMatrix()
+        try:
+            glTranslatef(rect.min_point.x, rect.min_point.y + (height - original_height) * 0.5 * scale, 0.0)
+            glScalef(scale, scale, 1.0)
+            for char in text:
+                glutStrokeCharacter(font, ord(char))
+        finally:
+            glPopMatrix()
+
     def _render_edges(self, node):
         for child in node.child_list:
             glVertex2f(node.position.x, node.position.y)
@@ -96,8 +118,11 @@ class GLCanvas(QtOpenGL.QGLWidget):
 
     def animation_tick(self):
         if isinstance(self.root_node, MathTreeNode):
-            self.root_node.advance_positions(0.05)
-            self.update()
+            if not self.root_node.is_settled():
+                self.root_node.advance_positions(0.05)
+                self.update()
+            else:
+                pass # TODO: Apply tree manipulator somewhere.
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
@@ -111,8 +136,12 @@ class Window(QtWidgets.QMainWindow):
         
         self.line_edit = QtWidgets.QLineEdit()
         self.line_edit.returnPressed.connect(self.line_edit_enter_pressed)
+
+        self.expression_label = QtWidgets.QLabel()
+        self.expression_label.setFixedHeight(20)
         
         main_layout = QtWidgets.QVBoxLayout()
+        main_layout.addWidget(self.expression_label)
         main_layout.addWidget(self.canvas)
         main_layout.addWidget(self.line_edit)
         
@@ -136,9 +165,9 @@ class Window(QtWidgets.QMainWindow):
             'no': MathTreeNode('no'),
             'ni': MathTreeNode('ni'),
             '_v': lambda x, y, z: MathTreeNode('+', [
-                MathTreeNode('*', [MathTreeNode('e1'), MathTreeNode(x)]),
-                MathTreeNode('*', [MathTreeNode('e2'), MathTreeNode(y)]),
-                MathTreeNode('*', [MathTreeNode('e3'), MathTreeNode(z)])
+                MathTreeNode('*', [MathTreeNode(x), MathTreeNode('e1')]),
+                MathTreeNode('*', [MathTreeNode(y), MathTreeNode('e2')]),
+                MathTreeNode('*', [MathTreeNode(z), MathTreeNode('e3')])
             ])
         }
         
@@ -153,5 +182,10 @@ class Window(QtWidgets.QMainWindow):
             msgBox.exec_()
         else:
             self.line_edit.clear()
-            self.canvas.set_root_node(self.locals_dict.get('root', None))
+            root_node = self.locals_dict.get('root', None)
+            self.canvas.set_root_node(root_node)
             self.canvas.update()
+            text = '' if root_node is None else root_node.expression_text()
+            metrics = QtGui.QFontMetrics(self.expression_label.font())
+            text = metrics.elidedText(text, QtCore.Qt.ElideRight, self.expression_label.width())
+            self.expression_label.setText(text)

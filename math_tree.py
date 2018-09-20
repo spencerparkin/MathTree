@@ -14,7 +14,16 @@ class MathTreeNode(object):
         self.target_position = None
         self.child_list = [] if child_list is None else child_list
         self.data = data
-    
+
+    def is_valid(self):
+        node_set = set()
+        for node in self.yield_nodes():
+            key = str(node)
+            if key in node_set:
+                return False
+            node_set.add(key)
+        return True
+
     def calculate_target_positions(self):
         self.target_position = Vector(0.0, 0.0)
         
@@ -74,7 +83,36 @@ class MathTreeNode(object):
             self.position = line_segment.Lerp(lerp_value)
         for child in self.child_list:
             child.advance_positions(lerp_value)
-    
+
+    def is_settled(self):
+        if self.position != self.target_position:
+            return False
+        for child in self.child_list:
+            if not child.is_settled():
+                return False
+        return True
+
+    def display_text(self):
+        if isinstance(self.data, str):
+            return self.data
+        elif isinstance(self.data, float):
+            return '%1.2f' % self.data
+        else:
+            return str(self.data)
+
+    def expression_text(self):
+        if len(self.child_list) > 0:
+            display_text = self.display_text()
+            if len(display_text) == 1:
+                return '(' + display_text.join([child.expression_text() for child in self.child_list]) + ')'
+            else:
+                return display_text + '(' + ','.join([child.expression_text() for child in self.child_list]) + ')'
+        else:
+            return self.display_text()
+
+    def generate_latex_code(self):
+        pass
+
     def copy(self):
         return copy.deepcopy(self)
     
