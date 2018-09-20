@@ -4,10 +4,13 @@ from PyQt5 import QtGui, QtCore, QtWidgets, QtOpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-from math_tree import MathTreeNode
+from math_tree import MathTreeNode, simplify_tree
 from math2d_aa_rect import AxisAlignedRectangle
+from script_edit import ScriptEditPanel
 
 class GLCanvas(QtOpenGL.QGLWidget):
+    simplify_step_taken_signal = QtCore.pyqtSignal()
+    
     def __init__(self, parent):
         gl_format = QtOpenGL.QGLFormat()
         gl_format.setAlpha(True)
@@ -21,6 +24,8 @@ class GLCanvas(QtOpenGL.QGLWidget):
         self.animation_timer = QtCore.QTimer()
         self.animation_timer.start(1)
         self.animation_timer.timeout.connect(self.animation_tick)
+        
+        self.auto_simplify = False
     
     def set_root_node(self, node):
         self.root_node = node
@@ -30,6 +35,10 @@ class GLCanvas(QtOpenGL.QGLWidget):
     
     def get_root_node(self):
         return self.root_node
+     
+    def mousePressEvent(self, event):
+         # TODO: Maybe use OpenGL selection mechanism on the tree?
+         super().mousePressEvent(event)
      
     def initializeGL(self):
         glClearColor(1.0, 1.0, 1.0, 0.0)
@@ -121,8 +130,16 @@ class GLCanvas(QtOpenGL.QGLWidget):
             if not self.root_node.is_settled():
                 self.root_node.advance_positions(0.05)
                 self.update()
-            else:
-                pass # TODO: Apply tree manipulator somewhere.
+            elif self.auto_simplify:
+                self.do_simplify_step()
+    
+    def do_simplify_step(self):
+        if isinstance(self.root_node, MathTreeNode):
+            self.root_node = simplify_tree(self.root_node, max_iters=1)
+            self.root_node.calculate_target_positions()
+            self.root_node.assign_initial_positions()
+            self.update()
+            self.simplify_step_taken_signal.emit()
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
@@ -133,6 +150,7 @@ class Window(QtWidgets.QMainWindow):
         self.setWindowTitle('Math Tree')
 
         self.canvas = GLCanvas(self)
+        self.canvas.simplify_step_taken_signal.connect(self.simplify_step_taken)
         
         self.line_edit = QtWidgets.QLineEdit()
         self.line_edit.returnPressed.connect(self.line_edit_enter_pressed)
@@ -140,8 +158,16 @@ class Window(QtWidgets.QMainWindow):
         self.expression_label = QtWidgets.QLabel()
         self.expression_label.setFixedHeight(20)
         
+        simplify_button = QtWidgets.QPushButton('Simplify')
+        simplify_button.setFixedWidth(60)
+        simplify_button.clicked.connect(self.simplify_button_pressed)
+        
+        top_layout = QtWidgets.QHBoxLayout()
+        top_layout.addWidget(simplify_button)
+        top_layout.addWidget(self.expression_label)
+        
         main_layout = QtWidgets.QVBoxLayout()
-        main_layout.addWidget(self.expression_label)
+        main_layout.addLayout(top_layout)
         main_layout.addWidget(self.canvas)
         main_layout.addWidget(self.line_edit)
         
@@ -149,12 +175,23 @@ class Window(QtWidgets.QMainWindow):
         main_widget.setLayout(main_layout)
         
         self.setCentralWidget(main_widget)
+        
+        script_edit_panel = ScriptEditPanel(self)
+        script_edit_panel.execute_button_pressed_signal.connect(self.script_edit_execute_pressed)
+        
+        self.addDockWidget(QtCore.Qt.RightDockWidgetArea, script_edit_panel)
+    
+    def script_edit_execute_pressed(self, code):
+        self._execute_code(code)
     
     def line_edit_enter_pressed(self):
         code = self.line_edit.text()
-        
+        if self._execute_code(code):
+            self.line_edit.clear()
+    
+    def _execute_code(self, code):
         from math_tree import MathTreeNode
-        
+
         globals_dict = {
             '_n': lambda x: MathTreeNode(x),
             'inv': lambda x: MathTreeNode('inv', [x]),
@@ -170,7 +207,7 @@ class Window(QtWidgets.QMainWindow):
                 MathTreeNode('*', [MathTreeNode(z), MathTreeNode('e3')])
             ])
         }
-        
+
         try:
             exec(code, globals_dict, self.locals_dict)
         except Exception as ex:
@@ -180,12 +217,24 @@ class Window(QtWidgets.QMainWindow):
             msgBox.setText('ERROR: ' + str(error))
             msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
             msgBox.exec_()
+            return False
         else:
-            self.line_edit.clear()
             root_node = self.locals_dict.get('root', None)
             self.canvas.set_root_node(root_node)
             self.canvas.update()
-            text = '' if root_node is None else root_node.expression_text()
-            metrics = QtGui.QFontMetrics(self.expression_label.font())
-            text = metrics.elidedText(text, QtCore.Qt.ElideRight, self.expression_label.width())
-            self.expression_label.setText(text)
+            self.update_expression_label()
+            return True
+    
+    def update_expression_label(self):
+        root_node = self.canvas.get_root_node()
+        text = '' if root_node is None else root_node.expression_text()
+        metrics = QtGui.QFontMetrics(self.expression_label.font())
+        text = metrics.elidedText(text, QtCore.Qt.ElideRight, self.expression_label.width())
+        self.expression_label.setText(text)
+    
+    def simplify_step_taken(self):
+        self.update_expression_label()
+    
+    def simplify_button_pressed(self):
+        self.canvas.do_simplify_step()
+            

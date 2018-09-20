@@ -164,7 +164,7 @@ class MathTreeManipulator(object):
         pass
 
     def _manipulate_subtree(self, node):
-        pass
+        raise Exception('Method not implemented.')
 
     def manipulate_tree(self, node):
         new_node = self._manipulate_subtree(node)
@@ -195,7 +195,12 @@ def manipulate_tree(node, manipulator_list, max_iters=None):
     return node
 
 def simplify_tree(node, max_iters=None):
+    from manipulators.associator import Associator
+    from manipulators.distributor import Distributor
+    from manipulators.inverter import Inverter
     manipulator_list = [
-        # TODO: Make'em here.
+        Associator(),
+        Inverter(),
+        Distributor()
     ]
     return manipulate_tree(node, manipulator_list, max_iters)
