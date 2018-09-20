@@ -158,3 +158,44 @@ class MathTreeNode(object):
     
     def __ror__(self, other):
         return MathTreeNode('.', [self.cast(other), self.copy()])
+
+class MathTreeManipulator(object):
+    def __init__(self):
+        pass
+
+    def _manipulate_subtree(self, node):
+        pass
+
+    def manipulate_tree(self, node):
+        new_node = self._manipulate_subtree(node)
+        if new_node is not None:
+            return new_node
+        for i, child in enumerate(node.child_list):
+            new_child = self.manipulate_tree(child)
+            if new_child is not None:
+                node.child_list[i] = new_node
+                return node
+
+def manipulate_tree(node, manipulator_list, max_iters=None):
+    iter_count = 0
+    expression_set = set()
+    expression_set.add(node.expression_text())
+    while max_iters is None or iter_count < max_iters:
+        iter_count += 1
+        for manipulator in manipulator_list:
+            new_node = manipulator.manipulate_tree(node)
+            if new_node is not None:
+                node = new_node
+                expression_text = node.expression_text()
+                if expression_text in expression_set:
+                    raise Exception('Expression repeated!')
+                break
+        else:
+            break
+    return node
+
+def simplify_tree(node, max_iters=None):
+    manipulator_list = [
+        # TODO: Make'em here.
+    ]
+    return manipulate_tree(node, manipulator_list, max_iters)
