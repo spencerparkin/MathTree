@@ -135,11 +135,22 @@ class GLCanvas(QtOpenGL.QGLWidget):
     
     def do_simplify_step(self):
         if isinstance(self.root_node, MathTreeNode):
-            self.root_node = simplify_tree(self.root_node, max_iters=1)
-            self.root_node.calculate_target_positions()
-            self.root_node.assign_initial_positions()
-            self.update()
-            self.simplify_step_taken_signal.emit()
+            try:
+                new_root_node = simplify_tree(self.root_node, max_iters=1)
+            except Exception as ex:
+                error = str(ex)
+                msgBox = QtWidgets.QMessageBox(parent=self)
+                msgBox.setWindowTitle('Simplification error!')
+                msgBox.setText('ERROR: ' + str(error))
+                msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
+                msgBox.exec_()
+                self.auto_simplify = False
+            else:
+                self.root_node = new_root_node
+                self.root_node.calculate_target_positions()
+                self.root_node.assign_initial_positions()
+                self.update()
+                self.simplify_step_taken_signal.emit()
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):

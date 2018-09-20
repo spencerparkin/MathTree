@@ -120,8 +120,11 @@ class MathTreeNode(object):
     def cast(obj):
         if isinstance(obj, MathTreeNode):
             return obj.copy()
-        else:
+        if isinstance(obj, float) or isinstance(obj, str):
             return MathTreeNode(obj)
+        if isinstance(obj, int):
+            return MathTreeNode(float(obj))
+        raise Exception('Cannot cast: %s' % str(obj))
     
     def __add__(self, other):
         return MathTreeNode('+', [self.copy(), self.cast(other)])
@@ -141,10 +144,10 @@ class MathTreeNode(object):
     def __rmul__(self, other):
         return MathTreeNode('*', [self.cast(other), self.copy()])
     
-    def __div__(self, other):
+    def __truediv__(self, other):
         return MathTreeNode('/', [self.copy(), self.cast(other)])
     
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         return MathTreeNode('/', [self.cast(other), self.copy()])
     
     def __xor__(self, other):
@@ -175,6 +178,22 @@ class MathTreeManipulator(object):
             if new_child is not None:
                 node.child_list[i] = new_child
                 return node
+    
+    def _sort_list(self, given_list, sort_key):
+        # Note that this is a stable sort.
+        adjacent_swap_count = 0
+        if len(given_list) > 1:
+            keep_going = True
+            while keep_going:
+                keep_going = False
+                for i in range(len(given_list) - 1):
+                    key_a = sort_key(given_list[i])
+                    key_b = sort_key(given_list[i + 1])
+                    if key_a > key_b:
+                        given_list[i], given_list[i + 1] = given_list[i + 1], given_list[i]
+                        adjacent_swap_count += 1
+                        keep_going = True
+        return adjacent_swap_count
 
 def manipulate_tree(node, manipulator_list, max_iters=None):
     iter_count = 0
@@ -197,12 +216,18 @@ def manipulate_tree(node, manipulator_list, max_iters=None):
     return node
 
 def simplify_tree(node, max_iters=None):
+    from manipulators.adder import Adder
     from manipulators.associator import Associator
+    from manipulators.degenerate_case_handler import DegenerateCaseHandler
     from manipulators.distributor import Distributor
     from manipulators.inverter import Inverter
+    from manipulators.multiplier import Multiplier
     manipulator_list = [
-        Associator(),
+        DegenerateCaseHandler(),
+        Adder(),
+        Multiplier(),
         Inverter(),
-        Distributor()
+        Associator(),
+        Distributor(),
     ]
     return manipulate_tree(node, manipulator_list, max_iters)
