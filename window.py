@@ -62,6 +62,7 @@ class GLCanvas(QtOpenGL.QGLWidget):
             rect.Scale(1.1)
             rect.ExpandToMatchAspectRatioOf(viewport_rect)
         
+            # TODO: To avoid popping, we should animate toward our projection rectangle.
             glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
             gluOrtho2D(rect.min_point.x, rect.max_point.x, rect.min_point.y, rect.max_point.y)
