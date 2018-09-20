@@ -12,7 +12,7 @@ class Associator(MathTreeManipulator):
             for i, node_b in enumerate(node_a.child_list):
                 if node_b.data == node_a.data:
                     node = MathTreeNode(node_a.data)
-                    node.child_list += [node_c.copy() for node_c in node_a[:i]]
+                    node.child_list += [node_c.copy() for node_c in node_a.child_list[:i]]
                     node.child_list += [node_c.copy() for node_c in node_b.child_list]
-                    node.child_list += [node_c.copy() for node_c in node_a[i+1:]]
+                    node.child_list += [node_c.copy() for node_c in node_a.child_list[i+1:]]
                     return node

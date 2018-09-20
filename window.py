@@ -162,9 +162,14 @@ class Window(QtWidgets.QMainWindow):
         simplify_button.setFixedWidth(60)
         simplify_button.clicked.connect(self.simplify_button_pressed)
         
+        self.auto_simplify_check = QtWidgets.QCheckBox('Auto Simplify')
+        self.auto_simplify_check.clicked.connect(self.auto_simplify_check_pressed)
+        self.auto_simplify_check.setFixedWidth(80)
+        
         top_layout = QtWidgets.QHBoxLayout()
         top_layout.addWidget(simplify_button)
         top_layout.addWidget(self.expression_label)
+        top_layout.addWidget(self.auto_simplify_check)
         
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addLayout(top_layout)
@@ -180,6 +185,9 @@ class Window(QtWidgets.QMainWindow):
         script_edit_panel.execute_button_pressed_signal.connect(self.script_edit_execute_pressed)
         
         self.addDockWidget(QtCore.Qt.RightDockWidgetArea, script_edit_panel)
+    
+    def auto_simplify_check_pressed(self):
+        self.canvas.auto_simplify = self.auto_simplify_check.isChecked()
     
     def script_edit_execute_pressed(self, code):
         self._execute_code(code)
@@ -205,7 +213,8 @@ class Window(QtWidgets.QMainWindow):
                 MathTreeNode('*', [MathTreeNode(x), MathTreeNode('e1')]),
                 MathTreeNode('*', [MathTreeNode(y), MathTreeNode('e2')]),
                 MathTreeNode('*', [MathTreeNode(z), MathTreeNode('e3')])
-            ])
+            ]),
+            'simplify': simplify_tree
         }
 
         try:

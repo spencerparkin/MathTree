@@ -15,9 +15,16 @@ class ScriptEditPanel(QtWidgets.QDockWidget):
         execute_button = QtWidgets.QPushButton('Execute')
         execute_button.clicked.connect(self.execute_button_pressed)
         
+        load_button = QtWidgets.QPushButton('Load Script...')
+        load_button.clicked.connect(self.load_button_pressed)
+        
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.addWidget(execute_button)
+        button_layout.addWidget(load_button)
+        
         main_layout = QtWidgets.QVBoxLayout()
         main_layout.addWidget(self.script_edit)
-        main_layout.addWidget(execute_button)
+        main_layout.addLayout(button_layout)
         
         main_widget = QtWidgets.QWidget()
         main_widget.setLayout(main_layout)
@@ -27,6 +34,13 @@ class ScriptEditPanel(QtWidgets.QDockWidget):
     def execute_button_pressed(self):
         code = self.script_edit.text()
         self.execute_button_pressed_signal.emit(code)
+
+    def load_button_pressed(self):
+        path = QtWidgets.QFileDialog.getOpenFileName(self, 'Load Script')[0]
+        if len(path) > 0:
+            with open(path, 'r') as handle:
+                code = handle.read()
+            self.script_edit.setText(code)
 
 class ScriptEditControl(Qsci.QsciScintilla):
     def __init__(self, parent):

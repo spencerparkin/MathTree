@@ -23,7 +23,7 @@ if __name__ == '__main__':
         from window import Window
         
         win = Window()
-        win.resize(640, 480)
+        win.resize(1000, 800)
         win.show()
         
         sys.exit(app.exec_())

@@ -75,7 +75,7 @@ class MathTreeNode(object):
         for child in self.child_list:
             child.assign_initial_positions(self.position)
     
-    def advance_positions(self, lerp_value, eps=1e-5):
+    def advance_positions(self, lerp_value, eps=1e-2):
         line_segment = LineSegment(self.position, self.target_position)
         if line_segment.Length() < eps:
             self.position = self.target_position
@@ -173,7 +173,7 @@ class MathTreeManipulator(object):
         for i, child in enumerate(node.child_list):
             new_child = self.manipulate_tree(child)
             if new_child is not None:
-                node.child_list[i] = new_node
+                node.child_list[i] = new_child
                 return node
 
 def manipulate_tree(node, manipulator_list, max_iters=None):
@@ -185,6 +185,8 @@ def manipulate_tree(node, manipulator_list, max_iters=None):
         for manipulator in manipulator_list:
             new_node = manipulator.manipulate_tree(node)
             if new_node is not None:
+                if not new_node.is_valid():
+                    raise Exception('Manipulated tree is not valid!')
                 node = new_node
                 expression_text = node.expression_text()
                 if expression_text in expression_set:
