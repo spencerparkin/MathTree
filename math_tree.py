@@ -136,7 +136,7 @@ class MathTreeNode(object):
         elif self.data == '+' or self.data == '^':
             if len(self.child_list) == 0:
                 return 0
-            grade_list = [child.grade for child in self.child_list]
+            grade_list = [child.calculate_grade() for child in self.child_list]
             if any([grade == None for grade in grade_list]):
                 return None
             if self.data == '+':
