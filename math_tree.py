@@ -131,7 +131,7 @@ class MathTreeNode(object):
                         grade_b = grade
                     else:
                         raise Exception('The inner product is not generally associative!')
-            grade = math.abs(grade_a - grade_b)
+            grade = abs(grade_a - grade_b)
             return grade
         elif self.data == '+' or self.data == '^':
             if len(self.child_list) == 0:
@@ -278,11 +278,12 @@ def manipulate_tree(node, manipulator_list, max_iters=None):
             break
     return node
 
-def simplify_tree(node, max_iters=None):
+def simplify_tree(node, max_iters=None, bilinear_form=None):
     from manipulators.adder import Adder
     from manipulators.associator import Associator
     from manipulators.degenerate_case_handler import DegenerateCaseHandler
     from manipulators.distributor import Distributor
+    from manipulators.inner_product_handler import InnerProductHandler
     from manipulators.inverter import Inverter
     from manipulators.multiplier import Multiplier
     from manipulators.outer_product_handler import OuterProductHandler
@@ -294,5 +295,6 @@ def simplify_tree(node, max_iters=None):
         Associator(),
         Distributor(),
         OuterProductHandler(),
+        InnerProductHandler(bilinear_form)
     ]
     return manipulate_tree(node, manipulator_list, max_iters)

@@ -20,7 +20,7 @@ class Multiplier(MathTreeManipulator):
             for node_b in node_a.child_list:
                 if any([op == node_b.data for op in ['*', '.', '^']]):
                     for i, node_c in enumerate(node_b.child_list):
-                        if isinstance(node_c.data, float) or (isinstance(node_c.data, str) and node_c.data[0] == '$'):
+                        if node_c.calculate_grade() == 0:
                             del node_b.child_list[i]
                             node_a.child_list.insert(0, node_c)
                             return node_a
