@@ -119,32 +119,31 @@ class MathTreeNode(object):
             return 0
         elif isinstance(self.data, str) and self.data[0].isalpha():
             return 1
-        elif self.data == '.':
-            grade_a = None
-            grade_b = None
-            for child in self.child_list:
-                grade = child.calculate_grade()
-                if grade is not None and grade > 0:
-                    if grade_a is None:
-                        grade_a = grade
-                    elif grade_b is None:
-                        grade_b = grade
-                    else:
-                        raise Exception('The inner product is not generally associative!')
-            grade = abs(grade_a - grade_b)
-            return grade
-        elif self.data == '+' or self.data == '^':
+        elif self.data == '+' or self.data == '^' or self.data == '.' or self.data == '*':
             if len(self.child_list) == 0:
                 return 0
             grade_list = [child.calculate_grade() for child in self.child_list]
             if any([grade == None for grade in grade_list]):
                 return None
+            if len(grade_list) == 1:
+                return grade_list[0]
             if self.data == '+':
                 if all([grade_list[0] == grade for grade in grade_list[1:]]) or len(grade_list) == 1:
                     return grade_list[0]
             elif self.data == '^':
                 return sum(grade_list)
-        return None # We don't know the grade, or there may not be one homogeneous grade.
+            elif self.data == '.':
+                non_zero_grade_list = [grade for grade in grade_list if grade != 0]
+                if len(non_zero_grade_list) > 2:
+                    raise Exception('Ambiguous inner product!')
+                elif len(non_zero_grade_list) == 2:
+                    grade_a = non_zero_grade_list[0]
+                    grade_b = non_zero_grade_list[1]
+                    return abs(grade_a - grade_b)
+                elif len(non_zero_grade_list) == 1:
+                    return non_zero_grade_list[0]
+                else:
+                    return 0
 
     def copy(self):
         return copy.deepcopy(self)
