@@ -1,5 +1,7 @@
 # window.py
 
+import traceback
+
 from PyQt5 import QtGui, QtCore, QtWidgets, QtOpenGL
 from OpenGL.GL import *
 from OpenGL.GLU import *
@@ -139,10 +141,11 @@ class GLCanvas(QtOpenGL.QGLWidget):
             try:
                 new_root_node = simplify_tree(self.root_node, max_iters=1)
             except Exception as ex:
+                tb = traceback.format_exc()
                 error = str(ex)
                 msgBox = QtWidgets.QMessageBox(parent=self)
                 msgBox.setWindowTitle('Simplification error!')
-                msgBox.setText('ERROR: ' + str(error))
+                msgBox.setText('ERROR: ' + str(error) + '\n\n' + tb)
                 msgBox.setStandardButtons(QtWidgets.QMessageBox.Ok)
                 msgBox.exec_()
                 self.auto_simplify = False

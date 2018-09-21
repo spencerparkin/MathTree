@@ -124,7 +124,7 @@ class MathTreeNode(object):
             grade_b = None
             for child in self.child_list:
                 grade = child.calculate_grade()
-                if grade > 0:
+                if grade is not None and grade > 0:
                     if grade_a is None:
                         grade_a = grade
                     elif grade_b is None:
