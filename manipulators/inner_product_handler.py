@@ -113,3 +113,7 @@ class InnerProductHandler(MathTreeManipulator):
         key = vector_a + '.' + vector_b
         if key in self.conformal_bilinear_form_map:
             return self.conformal_bilinear_form_map[key]
+        if (vector_a == 'no' or vector_a == 'ni') and vector_b[0] == 'e':
+            return 0.0
+        if (vector_b == 'no' or vector_b == 'ni') and vector_a[0] == 'e':
+            return 0.0
