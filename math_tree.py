@@ -276,6 +276,7 @@ def manipulate_tree(node, manipulator_list, max_iters=None):
                 expression_text = node.expression_text()
                 if expression_text in expression_set:
                     raise Exception('Expression repeated!')
+                expression_set.add(expression_text)
                 break
         else:
             break
