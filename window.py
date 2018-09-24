@@ -8,6 +8,8 @@ from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from math_tree import MathTreeNode, simplify_tree
 from math2d_aa_rect import AxisAlignedRectangle
+from math2d_line_segment import LineSegment
+from math2d_vector import Vector
 from script_edit import ScriptEditPanel
 
 class GLCanvas(QtOpenGL.QGLWidget):
@@ -22,52 +24,97 @@ class GLCanvas(QtOpenGL.QGLWidget):
         super().__init__(gl_format, parent)
         
         self.root_node = None
+        self.proj_rect = None
+        self.anim_proj_rect = AxisAlignedRectangle()
         
         self.animation_timer = QtCore.QTimer()
         self.animation_timer.start(1)
         self.animation_timer.timeout.connect(self.animation_tick)
         
         self.auto_simplify = False
+
+        self.dragPos = None
+        self.dragging = False
     
     def set_root_node(self, node):
         self.root_node = node
         if isinstance(node, MathTreeNode):
             node.calculate_target_positions()
             node.assign_initial_positions()
+            self._recalc_projection_rect()
     
     def get_root_node(self):
         return self.root_node
      
     def mousePressEvent(self, event):
-         # TODO: Maybe use OpenGL selection mechanism on the tree?
-         super().mousePressEvent(event)
-     
+         if event.button() == QtCore.Qt.LeftButton:
+             self.grabMouse()
+             self.dragPos = event.pos()
+             self.dragging = True
+         elif event.button() == QtCore.Qt.RightButton:
+             pass  # TODO: Maybe use OpenGL selection mechanism on the tree?
+
+    def mouseMoveEvent(self, event):
+        if self.dragging:
+            sensativity = 0.005 * self.proj_rect.Width()
+            delta = event.pos() - self.dragPos
+            delta = Vector(-float(delta.x()), float(delta.y())) * sensativity
+            self.dragPos = event.pos()
+            self.proj_rect.min_point += delta
+            self.proj_rect.max_point += delta
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        self.releaseMouse()
+        self.dragging = False
+
+    def wheelEvent(self, event):
+        delta = int(event.angleDelta().y() / 120)
+        if delta < 0.0:
+            scale = 1.1
+        else:
+            scale = 0.9
+        delta = abs(delta)
+        for i in range(delta):
+            self.proj_rect.Scale(scale)
+        self.update()
+
     def initializeGL(self):
         glClearColor(1.0, 1.0, 1.0, 0.0)
     
     def resizeGL(self, width, height):
         glViewport(0, 0, width, height)
-    
+        if isinstance(self.root_node, MathTreeNode):
+            self._recalc_projection_rect()
+
+    def _recalc_projection_rect(self):
+
+        viewport = glGetIntegerv(GL_VIEWPORT)
+        viewport_rect = AxisAlignedRectangle()
+        viewport_rect.min_point.x = 0.0
+        viewport_rect.min_point.y = 0.0
+        viewport_rect.max_point.x = float(viewport[2])
+        viewport_rect.max_point.y = float(viewport[3])
+
+        self.proj_rect = self.root_node.calculate_subtree_bounding_rectangle(targets=True)
+        self.proj_rect.Scale(1.1)
+        self.proj_rect.ExpandToMatchAspectRatioOf(viewport_rect)
+
     def paintGL(self):
         glClear(GL_COLOR_BUFFER_BIT)
         
         if isinstance(self.root_node, MathTreeNode):
-        
-            viewport = glGetIntegerv(GL_VIEWPORT)
-            viewport_rect = AxisAlignedRectangle()
-            viewport_rect.min_point.x = 0.0
-            viewport_rect.min_point.y = 0.0
-            viewport_rect.max_point.x = float(viewport[2])
-            viewport_rect.max_point.y = float(viewport[3])
-        
-            rect = self.root_node.calculate_subtree_bounding_rectangle(targets=True)
-            rect.Scale(1.1)
-            rect.ExpandToMatchAspectRatioOf(viewport_rect)
-        
-            # TODO: To avoid popping, we should animate toward our projection rectangle.
+
+            if self.proj_rect is None:
+                self._recalc_projection_rect()
+
             glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
-            gluOrtho2D(rect.min_point.x, rect.max_point.x, rect.min_point.y, rect.max_point.y)
+            gluOrtho2D(
+                self.anim_proj_rect.min_point.x,
+                self.anim_proj_rect.max_point.x,
+                self.anim_proj_rect.min_point.y,
+                self.anim_proj_rect.max_point.y)
             
             glMatrixMode(GL_MODELVIEW)
             glLoadIdentity()
@@ -135,6 +182,12 @@ class GLCanvas(QtOpenGL.QGLWidget):
                 self.update()
             elif self.auto_simplify:
                 self.do_simplify_step()
+        if self.proj_rect is not None:
+            if ((self.anim_proj_rect.min_point - self.proj_rect.min_point).Length() > 0.0 or
+                (self.anim_proj_rect.max_point - self.proj_rect.max_point).Length() > 0.0):
+                self.anim_proj_rect.min_point = LineSegment(self.anim_proj_rect.min_point, self.proj_rect.min_point).Lerp(0.1)
+                self.anim_proj_rect.max_point = LineSegment(self.anim_proj_rect.max_point, self.proj_rect.max_point).Lerp(0.1)
+                self.update()
     
     def do_simplify_step(self):
         if isinstance(self.root_node, MathTreeNode):
