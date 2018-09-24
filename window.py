@@ -178,7 +178,7 @@ class GLCanvas(QtOpenGL.QGLWidget):
     def animation_tick(self):
         if isinstance(self.root_node, MathTreeNode):
             if not self.root_node.is_settled():
-                self.root_node.advance_positions(0.05)
+                self.root_node.advance_positions(0.3)
                 self.update()
             elif self.auto_simplify:
                 self.do_simplify_step()
