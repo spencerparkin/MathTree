@@ -286,14 +286,16 @@ def simplify_tree(node, max_iters=None, bilinear_form=None):
     from manipulators.inverter import Inverter
     from manipulators.multiplier import Multiplier
     from manipulators.outer_product_handler import OuterProductHandler
+    # For optimization purposes, anything that reduces the tree should take
+    # priority over anything that would make the tree bigger, such as distribution.
     manipulator_list = [
+        InnerProductHandler(bilinear_form),
         DegenerateCaseHandler(),
         Adder(),
         Multiplier(),
         Inverter(),
         Associator(),
-        Distributor(),
         OuterProductHandler(),
-        InnerProductHandler(bilinear_form)
+        Distributor(),
     ]
     return manipulate_tree(node, manipulator_list, max_iters)
