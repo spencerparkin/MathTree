@@ -202,14 +202,18 @@ class MathTreeManipulator(object):
         raise Exception('Method not implemented.')
 
     def manipulate_tree(self, node):
-        new_node = self._manipulate_subtree(node)
-        if new_node is not None:
-            return new_node
         for i, child in enumerate(node.child_list):
             new_child = self.manipulate_tree(child)
             if new_child is not None:
                 node.child_list[i] = new_child
                 return node
+        # Notice that we go as deep into the tree before we try to manipulate anything.
+        # This is an optimization, because it lets us simplify sub-trees as far as possible
+        # before they potentially get copied by distribution or something else that might
+        # want to copy an entire sub-tree.
+        new_node = self._manipulate_subtree(node)
+        if new_node is not None:
+            return new_node
     
     def _sort_list(self, given_list, sort_key):
         # Note that this is a stable sort.
