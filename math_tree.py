@@ -287,20 +287,26 @@ def simplify_tree(node, max_iters=None, bilinear_form=None):
     from manipulators.associator import Associator
     from manipulators.degenerate_case_handler import DegenerateCaseHandler
     from manipulators.distributor import Distributor
+    from manipulators.geometric_product_handler import GeometricProductHandler
     from manipulators.inner_product_handler import InnerProductHandler
     from manipulators.inverter import Inverter
     from manipulators.multiplier import Multiplier
     from manipulators.outer_product_handler import OuterProductHandler
     # For optimization purposes, anything that reduces the tree should take
     # priority over anything that would make the tree bigger, such as distribution.
+    # The order here, however, does matter in some cases as concerns whether or not
+    # the alogrithm will converge or grow the tree without bound.  Regardless of order,
+    # the expression should never be incorrectly manipulated, but what we hope here
+    # is that the expression will converge quickly upon its most simplified form.
     manipulator_list = [
         InnerProductHandler(bilinear_form),
         DegenerateCaseHandler(),
+        GeometricProductHandler(), # This must happen before inversion.
         Adder(),
         Multiplier(),
         Inverter(),
         Associator(),
         OuterProductHandler(),
-        Distributor(),
+        Distributor(), # This must be last as it grows the tree the most.
     ]
     return manipulate_tree(node, manipulator_list, max_iters)
