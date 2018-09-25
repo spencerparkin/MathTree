@@ -304,9 +304,9 @@ def simplify_tree(node, max_iters=None, bilinear_form=None):
         GeometricProductHandler(), # This must happen before inversion.
         Adder(),
         Multiplier(),
-        Inverter(),
         Associator(),
         OuterProductHandler(),
+        Inverter(),
         Distributor(), # This must be last as it grows the tree the most.
     ]
     return manipulate_tree(node, manipulator_list, max_iters)
