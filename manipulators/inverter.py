@@ -32,9 +32,7 @@ class Inverter(MathTreeManipulator):
                     if scalar_list is not None and vector_list is not None:
                         return MathTreeNode('*', [
                             MathTreeNode('inv', [
-                                # To prevent the tree from growing without bound, geometric product
-                                # expansion must happen before any kind of inversion.
-                                MathTreeNode('*', scalar_list + [
+                                MathTreeNode('.', scalar_list + [
                                     MathTreeNode('*', [vector.copy() for vector in vector_list]),
                                     MathTreeNode('*', [vector.copy() for vector in vector_list])
                                 ])

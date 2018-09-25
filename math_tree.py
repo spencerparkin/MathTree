@@ -25,6 +25,9 @@ class MathTreeNode(object):
             node_set.add(key)
         return True
 
+    def size(self):
+        return 1 + sum([child.size() for child in self.child_list])
+
     def calculate_target_positions(self):
         self.target_position = Vector(0.0, 0.0)
         
@@ -117,7 +120,7 @@ class MathTreeNode(object):
     def calculate_grade(self):
         if isinstance(self.data, float) or (isinstance(self.data, str) and self.data[0] == '$'):
             return 0
-        elif isinstance(self.data, str) and self.data[0].isalpha():
+        elif isinstance(self.data, str) and self.data[0].isalpha() and len(self.child_list) == 0:
             return 1
         elif self.data == '+' or self.data == '^' or self.data == '.' or self.data == '*':
             if len(self.child_list) == 0:
@@ -261,7 +264,7 @@ class MathTreeManipulator(object):
                 return [], [node]
         return None, None
 
-def manipulate_tree(node, manipulator_list, max_iters=None):
+def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None):
     iter_count = 0
     expression_set = set()
     expression_set.add(node.expression_text())
@@ -272,6 +275,10 @@ def manipulate_tree(node, manipulator_list, max_iters=None):
             if new_node is not None:
                 if not new_node.is_valid():
                     raise Exception('Manipulated tree is not valid!')
+                if max_tree_size is not None:
+                    tree_size = new_node.size()
+                    if tree_size > max_tree_size:
+                        raise Exception('Tree size (%d) exceeded limit (%d).' % (tree_size, max_tree_size))
                 node = new_node
                 expression_text = node.expression_text()
                 if expression_text in expression_set:
@@ -292,21 +299,15 @@ def simplify_tree(node, max_iters=None, bilinear_form=None):
     from manipulators.inverter import Inverter
     from manipulators.multiplier import Multiplier
     from manipulators.outer_product_handler import OuterProductHandler
-    # For optimization purposes, anything that reduces the tree should take
-    # priority over anything that would make the tree bigger, such as distribution.
-    # The order here, however, does matter in some cases as concerns whether or not
-    # the alogrithm will converge or grow the tree without bound.  Regardless of order,
-    # the expression should never be incorrectly manipulated, but what we hope here
-    # is that the expression will converge quickly upon its most simplified form.
     manipulator_list = [
         InnerProductHandler(bilinear_form),
+        Associator(),
         DegenerateCaseHandler(),
-        GeometricProductHandler(), # This must happen before inversion.
+        Inverter(),
+        GeometricProductHandler(),
         Adder(),
         Multiplier(),
-        Associator(),
         OuterProductHandler(),
-        Inverter(),
-        Distributor(), # This must be last as it grows the tree the most.
+        Distributor(),
     ]
     return manipulate_tree(node, manipulator_list, max_iters)
