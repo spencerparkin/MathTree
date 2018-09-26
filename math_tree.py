@@ -122,7 +122,7 @@ class MathTreeNode(object):
             return 0
         elif isinstance(self.data, str) and self.data[0].isalpha() and len(self.child_list) == 0:
             return 1
-        elif self.data == '+' or self.data == '^' or self.data == '.' or self.data == '*':
+        elif self.data == '+' or self.data == '^' or self.data == '.' or self.data == '*' or self.data == 'inv':
             if len(self.child_list) == 0:
                 return 0
             grade_list = [child.calculate_grade() for child in self.child_list]
@@ -264,7 +264,7 @@ class MathTreeManipulator(object):
                 return [], [node]
         return None, None
 
-def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None):
+def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None, log=print):
     iter_count = 0
     expression_set = set()
     expression_set.add(node.expression_text())
@@ -273,10 +273,12 @@ def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None):
         for manipulator in manipulator_list:
             new_node = manipulator.manipulate_tree(node)
             if new_node is not None:
+                log(manipulator.__class__.__name__)
                 if not new_node.is_valid():
                     raise Exception('Manipulated tree is not valid!')
+                tree_size = new_node.size()
+                log('Tree size: %d' % tree_size)
                 if max_tree_size is not None:
-                    tree_size = new_node.size()
                     if tree_size > max_tree_size:
                         raise Exception('Tree size (%d) exceeded limit (%d).' % (tree_size, max_tree_size))
                 node = new_node
@@ -289,7 +291,7 @@ def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None):
             break
     return node
 
-def simplify_tree(node, max_iters=None, bilinear_form=None):
+def simplify_tree(node, max_iters=None, bilinear_form=None, log=print):
     from manipulators.adder import Adder
     from manipulators.associator import Associator
     from manipulators.degenerate_case_handler import DegenerateCaseHandler
@@ -310,4 +312,4 @@ def simplify_tree(node, max_iters=None, bilinear_form=None):
         OuterProductHandler(),
         Distributor(),
     ]
-    return manipulate_tree(node, manipulator_list, max_iters)
+    return manipulate_tree(node, manipulator_list, max_iters, log=log)

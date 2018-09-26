@@ -29,12 +29,13 @@ class Inverter(MathTreeManipulator):
                     if isinstance(node_b.data, float):
                         return MathTreeNode(1.0 / node_b.data)
                     scalar_list, vector_list = self._parse_blade(node_b)
-                    if scalar_list is not None and vector_list is not None:
+                    if scalar_list is not None and vector_list is not None and len(vector_list) > 0:
                         return MathTreeNode('*', [
+                            MathTreeNode(-1.0 if len(vector_list) % 2 == 0 else 1.0),
                             MathTreeNode('inv', [
                                 MathTreeNode('.', scalar_list + [
-                                    MathTreeNode('*', [vector.copy() for vector in vector_list]),
-                                    MathTreeNode('*', [vector.copy() for vector in vector_list])
+                                    MathTreeNode('^', [vector.copy() for vector in vector_list]),
+                                    MathTreeNode('^', [vector.copy() for vector in vector_list])
                                 ])
                             ]),
                             MathTreeNode('^', [vector.copy() for vector in reversed(vector_list)])

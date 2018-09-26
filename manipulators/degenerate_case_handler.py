@@ -26,3 +26,16 @@ class DegenerateCaseHandler(MathTreeManipulator):
                 if child.data == 0.0:
                     del node.child_list[i]
                     return node
+        op_list = ['*', '^']
+        for i in range(2):
+            if node.data == op_list[i]:
+                for j, child in enumerate(node.child_list):
+                    if child.data == op_list[(i + 1) % 2]:
+                        for k in range(len(node.child_list)):
+                            if k != j:
+                                if node.child_list[k].calculate_grade() != 0:
+                                    break
+                        else:
+                            node.data = op_list[(i + 1) % 2]
+                            return node
+                        break

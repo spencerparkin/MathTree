@@ -24,4 +24,7 @@ class Multiplier(MathTreeManipulator):
                             del node_b.child_list[i]
                             node_a.child_list.insert(0, node_c)
                             return node_a
-            # TODO: Sort product where we can.  All products are commutative with respect to scalars.
+            # Here we rely on the stable sort property since the products are not generally commutative.
+            adjacent_swap_count = self._sort_list(node_a.child_list, lambda child: 0 if child.calculate_grade() == 0 else 1)
+            if adjacent_swap_count > 0:
+                return node_a
