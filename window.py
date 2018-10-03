@@ -56,7 +56,7 @@ class GLCanvas(QtOpenGL.QGLWidget):
 
     def mouseMoveEvent(self, event):
         if self.dragging:
-            sensativity = 0.005 * self.proj_rect.Width()
+            sensativity = 0.003 * self.proj_rect.Width()
             delta = event.pos() - self.dragPos
             delta = Vector(-float(delta.x()), float(delta.y())) * sensativity
             self.dragPos = event.pos()

@@ -197,6 +197,23 @@ class MathTreeNode(object):
     def __ror__(self, other):
         return MathTreeNode('.', [self.cast(other), self.copy()])
 
+    def is_perfect_join(self):
+        if self.data[0].data != self.data[1].data:
+            return False
+        for child in self.child_list:
+            if not child.is_perfect_join():
+                return False
+        return True
+
+    def intersect_join(self):
+        if self.data[0].data == self.data[1].data:
+            new_node = MathTreeNode(self.data[0].data)
+            for child in self.child_list:
+                node = child.intersect_join()
+                if node is not None:
+                    new_node.child_list.append(node)
+            return node
+
 class MathTreeManipulator(object):
     def __init__(self):
         pass
@@ -264,6 +281,49 @@ class MathTreeManipulator(object):
                 return [], [node]
         return None, None
 
+    def _join_trees(self, root_a, root_b):
+        # This might not be the best way to join the trees, but I like the general idea.
+        root = MathTreeNode((root_a, root_b))
+        queue = [root]
+        while len(queue) > 0:
+            parent = queue.pop(0)
+            child_list_a = parent.data[0].child_list
+            child_list_b = parent.data[1].child_list
+            i = 0
+            j = 0
+            while True:
+                if i < len(child_list_a) and j < len(child_list_b):
+                    child_a = child_list_a[i]
+                    child_b = child_list_b[j]
+                    if child_a.data == child_b.data:
+                        parent.child_list.append(MathTreeNode((child_a, child_b)))
+                        queue.append(parent.child_list[-1])
+                    else:
+                        u = i
+                        while u < len(child_list_a) and child_list_a[u].data != child_b.data:
+                            u += 1
+                        v = j
+                        while j < len(child_list_b) and child_list_b[v].data != child_a.data:
+                            v += 1
+                        if u <= v:
+                            while i < u:
+                                parent.child_list.append(MathTreeNode((child_list_a[i], None)))
+                                i += 1
+                        elif v < u:
+                            while j < v:
+                                parent.child_list.append(MathTreeNode((None, child_list_b[i])))
+                                j += 1
+                elif i < len(child_list_a):
+                    while i < len(child_list_a):
+                        parent.child_list.append(MathTreeNode((child_list_a[i], None)))
+                        i += 1
+                elif j < len(child_list_b):
+                    while j < len(child_list_b):
+                        parent.child_list.append(MathTreeNode((None, child_list_b[j])))
+                        j += 1
+                else:
+                    break
+
 def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None, log=print):
     iter_count = 0
     expression_set = set()
@@ -301,6 +361,8 @@ def simplify_tree(node, max_iters=None, bilinear_form=None, log=print):
     from manipulators.inverter import Inverter
     from manipulators.multiplier import Multiplier
     from manipulators.outer_product_handler import OuterProductHandler
+    # The order of manipulators here has been carefully chosen.
+    # In some cases, the order may not matter; in others, very much so.
     manipulator_list = [
         InnerProductHandler(bilinear_form),
         Associator(),

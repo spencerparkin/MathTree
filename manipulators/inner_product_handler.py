@@ -6,37 +6,6 @@ class InnerProductHandler(MathTreeManipulator):
     def __init__(self, bilinear_form=None):
         super().__init__()
         self.bilinear_form = bilinear_form if bilinear_form is not None else self._default_bilinear_form
-        self.conformal_bilinear_form_map = {
-            'e1.e1': 1.0,
-            'e1.e2': 0.0,
-            'e1.e3': 0.0,
-            'e1.no': 0.0,
-            'e1.ni': 0.0,
-
-            'e2.e1': 0.0,
-            'e2.e2': 1.0,
-            'e2.e3': 0.0,
-            'e2.no': 0.0,
-            'e2.ni': 0.0,
-
-            'e3.e1': 0.0,
-            'e3.e2': 0.0,
-            'e3.e3': 1.0,
-            'e3.no': 0.0,
-            'e3.ni': 0.0,
-
-            'no.e1': 0.0,
-            'no.e2': 0.0,
-            'no.e3': 0.0,
-            'no.no': 0.0,
-            'no.ni': -1.0,
-
-            'ni.e1': 0.0,
-            'ni.e2': 0.0,
-            'ni.e3': 0.0,
-            'ni.no': -1.0,
-            'ni.ni': 0.0
-        }
 
     def _manipulate_subtree(self, node):
         if node.data == '.':
@@ -63,6 +32,8 @@ class InnerProductHandler(MathTreeManipulator):
                     scalar = self.bilinear_form(vector_a, vector_b)
                     if scalar is not None:
                         return MathTreeNode('*', [MathTreeNode(scalar)] + other_list + scalar_list_a + scalar_list_b)
+                    elif vector_a > vector_b:
+                        return MathTreeNode('.', other_list + scalar_list_a + scalar_list_b + vector_list_b + vector_list_a)
                 elif len(vector_list_a) == 1 and len(vector_list_b) > 1:
                     sum = self._expand_vector_with_blade(vector_list_a[0], vector_list_b, 1)
                     return MathTreeNode('*', other_list + scalar_list_a + scalar_list_b + [sum])
@@ -111,9 +82,41 @@ class InnerProductHandler(MathTreeManipulator):
 
     def _default_bilinear_form(self, vector_a, vector_b):
         key = vector_a + '.' + vector_b
-        if key in self.conformal_bilinear_form_map:
-            return self.conformal_bilinear_form_map[key]
+        if key in _conformal_bilinear_form_map:
+            return _conformal_bilinear_form_map[key]
         if (vector_a == 'no' or vector_a == 'ni') and vector_b[0] == 'e':
             return 0.0
         if (vector_b == 'no' or vector_b == 'ni') and vector_a[0] == 'e':
             return 0.0
+
+_conformal_bilinear_form_map = {
+    'e1.e1': 1.0,
+    'e1.e2': 0.0,
+    'e1.e3': 0.0,
+    'e1.no': 0.0,
+    'e1.ni': 0.0,
+
+    'e2.e1': 0.0,
+    'e2.e2': 1.0,
+    'e2.e3': 0.0,
+    'e2.no': 0.0,
+    'e2.ni': 0.0,
+
+    'e3.e1': 0.0,
+    'e3.e2': 0.0,
+    'e3.e3': 1.0,
+    'e3.no': 0.0,
+    'e3.ni': 0.0,
+
+    'no.e1': 0.0,
+    'no.e2': 0.0,
+    'no.e3': 0.0,
+    'no.no': 0.0,
+    'no.ni': -1.0,
+
+    'ni.e1': 0.0,
+    'ni.e2': 0.0,
+    'ni.e3': 0.0,
+    'ni.no': -1.0,
+    'ni.ni': 0.0
+}
