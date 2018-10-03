@@ -351,6 +351,19 @@ def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None, 
             break
     return node
 
+# I believe it worth noting here an alternative to the entire approach taken in this program to the
+# simplifying of a general GA expression.  Forgetting about a free-form tree, create a data-structure
+# that gives the general layout of any fully simplified GA expression: a sum over blades, each blade
+# being a polynomial paired with an ordered set of vectors.  Now all that remains is the ability to
+# combine any two of these data-structure together into another such data-structure in any operation.
+# Admittedly, this was my original approach in previous programs, and it worked very well for numeric
+# computation, and I believe it could also work for symbolic computation as well.  So why might a free-form
+# tree, and the approach taken in this program, be any better?  I struggle with this question.  Maybe it's
+# not any better.  Maybe it's worse.  One idea, however, is that there is more flexibility in a free-form
+# tree if there were ever other forms of the expression that we wanted to find.  For example, we might
+# want the factored form of a simplified GA expression in terms of the inner product.  I as yet have no
+# idea how to provide this functionality, but our choice of data-structure does not limit us to only GA
+# expressions of the most expanded, simplified form.
 def simplify_tree(node, max_iters=None, bilinear_form=None, log=print):
     from manipulators.adder import Adder
     from manipulators.associator import Associator
