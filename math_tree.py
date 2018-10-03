@@ -323,6 +323,7 @@ class MathTreeManipulator(object):
                         j += 1
                 else:
                     break
+        return root
 
 def manipulate_tree(node, manipulator_list, max_iters=None, max_tree_size=None, log=print):
     iter_count = 0
