@@ -32,4 +32,4 @@ if __name__ == '__main__':
         ex_type, ex, tb = sys.exc_info()
         traceback.print_tb(tb)
         error = str(ex)
-        print('ERROR:' + error)
+        print('ERROR: ' + error)
